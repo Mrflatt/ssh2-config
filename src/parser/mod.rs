@@ -204,6 +204,12 @@ impl SshConfigParser {
             Field::User => {
                 params.user = Some(Self::parse_string(args)?);
             }
+            Field::ProxyJump => {
+                params.proxy_jump = Some(Self::parse_comma_separated_list(args)?);
+            }
+            Field::ProxyCommand => {
+                params.proxy_command = Some(args);
+            }
             // -- unimplemented fields
             Field::AddKeysToAgent
             | Field::AddressFamily
@@ -255,8 +261,6 @@ impl SshConfigParser {
             | Field::PermitRemoteOpen
             | Field::PKCS11Provider
             | Field::PreferredAuthentications
-            | Field::ProxyCommand
-            | Field::ProxyJump
             | Field::ProxyUseFdpass
             | Field::PubkeyAcceptedKeyTypes
             | Field::RekeyLimit
@@ -511,6 +515,23 @@ mod test {
             ]
         );
         assert_eq!(params.user.as_deref().unwrap(), "omar");
+        assert_eq!(
+            params.proxy_command.unwrap(),
+            vec![
+                "ssh",
+                "-q",
+                "-W",
+                "%h:%p",
+                "gateway.example.com"
+            ]
+        );
+        assert_eq!(
+            params.proxy_jump.unwrap(),
+            vec![
+                "jump.example.com",
+                "jump2.example.com"
+            ]
+        );
 
         // Query tostapane
         let params = config.query("tostapane");
@@ -1175,6 +1196,8 @@ Host 192.168.*.*    172.26.*.*      !192.168.1.30
     Macs     spyro,deoxys
     Port 2222
     PubkeyAcceptedAlgorithms    -omar-crypt
+    ProxyCommand    ssh -q -W %h:%p gateway.example.com
+    ProxyJump      jump.example.com,jump2.example.com
 
 Host tostapane
     User    ciro-esposito

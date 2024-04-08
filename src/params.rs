@@ -58,6 +58,8 @@ pub struct HostParams {
     pub use_keychain: Option<bool>,
     /// Specifies the user to log in as.
     pub user: Option<String>,
+    pub proxy_command: Option<Vec<String>>,
+    pub proxy_jump: Option<Vec<String>>,
     /// fields that the parser wasn't able to parse
     pub ignored_fields: HashMap<String, Vec<String>>,
 }
@@ -167,6 +169,12 @@ impl HostParams {
         if let Some(user) = b.user.as_deref() {
             self.user = Some(user.to_owned());
         }
+        if let Some(proxy_command) = b.proxy_command.as_deref() {
+            self.proxy_command = Some(proxy_command.to_owned());
+        }
+        if let Some(proxy_jump) = b.proxy_jump.as_deref() {
+            self.proxy_jump = Some(proxy_jump.to_owned());
+        }
         if !b.ignored_fields.is_empty() {
             for (ignored_field, args) in &b.ignored_fields {
                 if !self.ignored_fields.contains_key(ignored_field) {
@@ -238,6 +246,8 @@ mod test {
         assert!(params.pubkey_authentication.is_none());
         assert!(params.remote_forward.is_none());
         assert!(params.server_alive_interval.is_none());
+        assert!(params.proxy_command.is_none());
+        assert!(params.proxy_jump.is_none());
         #[cfg(target_os = "macos")]
         assert!(params.use_keychain.is_none());
         assert!(params.tcp_keep_alive.is_none());
@@ -266,6 +276,8 @@ mod test {
         b.pubkey_authentication = Some(true);
         b.remote_forward = Some(32);
         b.server_alive_interval = Some(Duration::from_secs(10));
+        b.proxy_command = Some(vec!["ssh".to_string(), "-W".to_string(), "jump".to_string()]);
+        b.proxy_jump = Some(vec!["jump".to_string()]);
         #[cfg(target_os = "macos")]
         {
             b.use_keychain = Some(true);
@@ -294,6 +306,8 @@ mod test {
         #[cfg(target_os = "macos")]
         assert!(params.use_keychain.is_some());
         assert!(params.tcp_keep_alive.is_some());
+        assert!(params.proxy_jump.is_some());
+        assert!(params.proxy_command.is_some());
         // merge twices
         b.tcp_keep_alive = None;
         params.merge(&b);
